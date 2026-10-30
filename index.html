@@ -176,8 +176,8 @@ function pickFeat(){const all=Object.values(vmap);if(!all.length)return null;if(
  let pool=all.filter(v=>v.d>=1500);if(pool.length<3)pool=all;pool=pool.sort((a,b)=>b.v-a.v).slice(0,8);const v=pool[Math.floor(Math.random()*pool.length)];feat=v.id;return v}
 function hero(){const v=pickFeat();if(!v)return'';const p=pos[v.id],ch=data[v.c];
  return`<div id="hero" style="background-image:url(${thumb(v.id,'maxresdefault')}),url(${thumb(v.id,'hqdefault')})"><div><div class="tag"><b>S</b>Featured in ${esc(catOf(v.c))}</div><h1>${esc(v.t)}</h1><div class="meta"><b>${v.v.toLocaleString()} views</b><span>${esc(ch?.t)}</span><span>${v.p.slice(0,4)}</span><span>${fmt(v.d)}</span></div><button class="btn p" data-v="${v.id}" data-q="">▶ ${p&&p.t>5?'Resume at '+fmt(p.t):'Play'}</button><button class="btn g" data-go="ch:${v.c}">ⓘ More info</button><button class="btn g" id="shuf" aria-label="Another pick">⟳</button></div></div>`}
-const NAV=[['home','Home'],['explore','Explore'],['channels','Channels'],['live','Live TV'],['search','Search'],['settings','Settings']];
-function nav(){const t=view.split(':')[0],a={cat:'explore',ch:'channels',pl:'channels',recent:'home',hist:'home'}[t]||t;$('#nav').innerHTML=NAV.map(([k,l])=>`<button data-go="${k}" class="${a===k?'on':''}">${l}</button>`).join('')}
+const NAV=[['home','Home'],['explore','Explore'],['channels','Channels'],['live','Live TV'],['hist','History'],['search','Search'],['settings','Settings']];
+function nav(){const t=view.split(':')[0],a={cat:'explore',ch:'channels',pl:'channels',recent:'home'}[t]||t;$('#nav').innerHTML=NAV.map(([k,l])=>`<button data-go="${k}" class="${a===k?'on':''}">${l}</button>`).join('')}
 /* ---------- Views ---------- */
 function render(){
  qs={};nav();const A=$('#app'),V=view,L=Object.values(vmap);let h='';
@@ -194,7 +194,7 @@ function render(){
   const l=+i<0?d.v:d.pl[+i].v.map(x=>vmap[x]).filter(Boolean);h=`<main class="pad">${vh(+i<0?'All uploads':d.pl[+i].t,d.t,d.i,1)}${vgrid(l,'g')}</main>`}
  else if(V==='live')h=`<main class="pad">${vh('Live TV','Streaming now')}${[...new Set(cfg.tvs.map(tvCat))].sort().map(c=>row(c,tvH(c))).join('')||'<p class="mut">No live channels yet. Add some in Settings.</p>'}</main>`;
  else if(V==='recent')h=`<main class="pad">${vh('Recently added','',0,1)}${vgrid([...L].sort(byDate),'g')}</main>`;
- else if(V==='hist')h=`<main class="pad">${vh('Watch history','',0,1)}${vgrid(hist.filter(x=>vmap[x]).map(x=>vmap[x]),'g')}</main>`;
+ else if(V==='hist'){const l=hist.filter(x=>vmap[x]).map(x=>vmap[x]);h=`<main class="pad">${vh('Watch history',l.length+' videos')}${l.length?`<div class="f" style="padding:0 var(--sx)"><button class="ib" id="chh">Clear watch history</button></div>${vgrid(l,'g')}`:'<p class="mut">Nothing watched yet. Videos you play will show up here.</p>'}</main>`}
  else if(V==='search')h=`<main class="pad"><div class="sb"><input id="q" type="search" placeholder="Search channels, playlists, live TV and videos" aria-label="Search" value="${esc(sq)}"></div><div id="sr"></div></main>`;
  else if(V==='settings'){const cp=()=>`<div class="chips">${choices().map(c=>`<button class="chip" data-cc="${esc(c)}">${esc(c)}</button>`).join('')}</div>`;
   h=`<main class="pad"><div class="set">${vh('Settings','Set up your system')}
@@ -233,7 +233,7 @@ document.addEventListener('click',async e=>{const t=e.target,b=t.closest('button
   try{await loadChannel(c,toast);cfg.channels.push(c);const g=$('#cci').value.trim();if(g)cfg.cats[c]=g;saveCfg();$('#chi').value=$('#cci').value='';toast('Added '+data[c].t+' with '+data[c].v.length+' videos.');lists();nav()}catch(x){toast('Could not add channel: '+x.message)}return}
  if(id==='at'){if(!need())return;try{toast('Fetching live TV details…');const x=await parseTV($('#tvu').value,$('#tvn').value.trim());x.c=$('#tcc').value.trim()||'General';cfg.tvs.push(x);saveCfg();$('#tvu').value=$('#tvn').value='';toast('Added '+x.n+'.');lists();nav()}catch(x){toast(x.message)}return}
  if(id==='rf'){if(!need())return;try{for(const c of cfg.channels)await loadChannel(c,toast);toast('All channels refreshed.');lists()}catch(x){toast('Refresh failed: '+x.message)}return}
- if(id==='chh'){hist=[];pos={};ls.set('ss_hist',hist);ls.set('ss_pos',pos);return toast('Watch history cleared.')}
+ if(id==='chh'){hist=[];pos={};ls.set('ss_hist',hist);ls.set('ss_pos',pos);if(view==='hist')render();return toast('Watch history cleared.')}
  if(id==='cd'){data={};saveData();index();return toast('Cache cleared. Use Refresh all channels to reload.')}});
 document.addEventListener('input',e=>{if(e.target.id==='q'){sq=e.target.value;gN=60;srch()}});
 addEventListener('scroll',()=>$('#hd').classList.toggle('s',scrollY>40));addEventListener('pagehide',savePos);
